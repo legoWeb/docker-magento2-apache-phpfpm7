@@ -1,0 +1,69 @@
+version: '3.7'
+services:
+  app:
+    build: ./apache-php73
+    container_name: bro_app
+    ports:
+      - "80:80"
+    volumes:
+      - ./../magento:/var/www/html
+    expose:
+      - "9001"
+    hostname: docker.mage2.lcl
+    networks:
+      mftf:
+        aliases:
+          - docker.mage2.lcl
+
+  mysql:
+    container_name: bro_mysql
+    image: mysql:5.6
+    networks:
+      - mftf
+    ports:
+      - "34306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=mage_mftf
+      - MYSQL_USER=root
+
+  selenium:
+    image: magestore/mftf-selenium-chrome
+    container_name: bro_selenium2
+    networks:
+      - mftf
+    ports:
+      - 5900:5900
+    volumes:
+      - /dev/shm:/dev/shm
+    environment:
+      START_XVFB: "false"
+
+  allure:
+    image: "frankescobar/allure-docker-service"
+    container_name: bro_allure
+    networks:
+      - mftf
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: "TRUE"
+    ports:
+      - "4040:4040"
+      - "5050:5050"
+    volumes:
+      - ./../magento/dev/tests/acceptance/tests/_output/allure-results:/app/allure-results
+
+  adminer:
+    image: adminer
+    container_name: bro_adminer
+    networks:
+      - mftf
+    restart: always
+    ports:
+      - 8080:8080
+
+networks:
+  mftf:
